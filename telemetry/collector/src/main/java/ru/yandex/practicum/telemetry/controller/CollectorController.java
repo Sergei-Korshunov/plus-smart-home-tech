@@ -1,4 +1,4 @@
-package ru.yandex.practicum.telemetry;
+package ru.yandex.practicum.telemetry.controller;
 
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
