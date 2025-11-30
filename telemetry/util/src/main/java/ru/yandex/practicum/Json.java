@@ -38,13 +38,10 @@ public class Json {
         DatumWriter<T> writer = new SpecificDatumWriter<>(avroObject.getSchema());
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             Encoder jsonEncoder = EncoderFactory.get().jsonEncoder(avroObject.getSchema(), baos, true);
-
-
             writer.write(avroObject, jsonEncoder);
             jsonEncoder.flush();
-            String result = baos.toString();
 
-            return result;
+            return baos.toString();
         } catch (IOException e) {
             log.error("Ошибка сериализации объекта Avro в json формат: ", e.getMessage());
         }

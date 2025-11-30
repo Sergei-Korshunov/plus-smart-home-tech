@@ -1,6 +1,7 @@
 package ru.yandex.practicum.telemetry.kafka;
 
 import jakarta.annotation.PreDestroy;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.kafka.clients.producer.*;
@@ -14,8 +15,9 @@ import java.util.Properties;
 @EnableConfigurationProperties({KafkaProperty.class})
 @Component
 public class KafkaClient {
+    @Getter
     private final KafkaProperty kafkaProperty;
-    private final Producer<String, SpecificRecordBase> producer;
+    protected final Producer<String, SpecificRecordBase> producer;
 
     @Autowired
     public KafkaClient(KafkaProperty kafkaProperty) {

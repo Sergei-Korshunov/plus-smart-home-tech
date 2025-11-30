@@ -11,4 +11,6 @@ public class KafkaProperty {
     private String bootstrapServers;
     private String keySerializerClass;
     private String valueSerializerClass;
+    private String nameTopicHub;
+    private String nameTopicSensor;
 }

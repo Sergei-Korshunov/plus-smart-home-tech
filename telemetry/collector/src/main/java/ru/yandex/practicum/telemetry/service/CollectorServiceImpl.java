@@ -38,13 +38,12 @@ public class CollectorServiceImpl implements CollectorService {
     public void hubEvent(HubEvent hubEvent) {
         log.info("Вызов метода hubEvent()");
         log.info("2. Обработка события с типом: {}", hubEvent.getType());
-        final String topicName = "telemetry.hubs.v1";
 
         HubEventMapper hubEventMapper = null;
         if (hubEventMappers.containsKey(hubEvent.getType())) {
             hubEventMapper = hubEventMappers.get(hubEvent.getType());
 
-            kafkaClient.sendData(topicName,
+            kafkaClient.sendData(kafkaClient.getKafkaProperty().getNameTopicHub(),
                     null,
                     hubEvent.getTimestamp().toEpochMilli(),
                     hubEvent.getHubId(),
@@ -58,13 +57,12 @@ public class CollectorServiceImpl implements CollectorService {
     public void sensorEvent(SensorEvent sensorEvent) {
         log.info("Вызов метода sensorEvent()");
         log.info("2. Обработка события с типом: {}", sensorEvent.getType());
-        final String topicName = "telemetry.sensors.v1";
 
         SensorEventMapper sensorEventMapper = null;
         if (sensorEventMappers.containsKey(sensorEvent.getType())) {
             sensorEventMapper = sensorEventMappers.get(sensorEvent.getType());
 
-            kafkaClient.sendData(topicName,
+            kafkaClient.sendData(kafkaClient.getKafkaProperty().getNameTopicSensor(),
                     null,
                     sensorEvent.getTimestamp().toEpochMilli(),
                     sensorEvent.getHubId(),
