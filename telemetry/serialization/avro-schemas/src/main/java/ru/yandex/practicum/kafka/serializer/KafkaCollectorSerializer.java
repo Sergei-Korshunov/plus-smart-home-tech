@@ -32,7 +32,7 @@ public class KafkaCollectorSerializer implements Serializer<SpecificRecordBase> 
                 encoder.flush();
             }
 
-            log.info("3. Сериализуем объект Avro {}", Json.avroObjectToJson(data));
+            log.info("Сериализуем объект Avro {}", Json.avroObjectToJson(data));
             return out.toByteArray();
         } catch (IOException ex) {
             log.error("Ошибка сериализации данных для топика: {}, ошибка: ", topic, ex);
