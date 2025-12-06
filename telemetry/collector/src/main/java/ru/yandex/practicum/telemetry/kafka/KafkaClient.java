@@ -21,8 +21,10 @@ public class KafkaClient {
 
     @Autowired
     public KafkaClient(KafkaProperty kafkaProperty) {
+        log.info("Создание Kafka-клиента");
         this.kafkaProperty = kafkaProperty;
         producer = producerInstance();
+        log.info("Kafka-клиент успешно создан");
     }
 
     protected Producer<String, SpecificRecordBase> producerInstance() {
@@ -42,9 +44,10 @@ public class KafkaClient {
                 value
         );
 
+        log.info("Отправка данных в топик {}", topicName);
         producer.send(producerRecord);
         producer.flush();
-        log.info("4. Отправка данных в Kafka. Данные успешно отправлены в топик {}", topicName);
+        log.info("Данные успешно отправлены в топик");
     }
 
     @PreDestroy
