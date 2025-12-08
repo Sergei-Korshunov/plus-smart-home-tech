@@ -14,12 +14,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 @Slf4j
-public class KafkaCollectorSerializer implements Serializer<SpecificRecordBase> {
+public class SerializerAvro implements Serializer<SpecificRecordBase> {
 
-    private final EncoderFactory encoderFactory = EncoderFactory.get();
+    private final EncoderFactory encoderFactory;
     private BinaryEncoder encoder;
 
-    public KafkaCollectorSerializer() {
+    public SerializerAvro() {
+        this(EncoderFactory.get());
+    }
+
+    public SerializerAvro(EncoderFactory encoderFactory) {
+        this.encoderFactory = encoderFactory;
     }
 
     @Override
@@ -32,11 +37,11 @@ public class KafkaCollectorSerializer implements Serializer<SpecificRecordBase> 
                 encoder.flush();
             }
 
-            log.info("Сериализуем объект Avro {}", Json.avroObjectToJson(data));
+            log.info("Объект Avro в JSON формате {}", Json.avroObjectToJson(data));
             return out.toByteArray();
-        } catch (IOException ex) {
-            log.error("Ошибка сериализации данных для топика: {}, ошибка: ", topic, ex);
-            throw new SerializationException("Ошибка сериализации данных для топика [" + topic + "]", ex);
+        } catch (IOException exception) {
+            log.error("Ошибка сериализации данных для топика: {}, ошибка: ", topic, exception);
+            throw new SerializationException(String.format("Ошибка десериализации данных из топика %s", topic), exception);
         }
     }
 }
