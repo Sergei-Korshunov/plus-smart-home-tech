@@ -14,10 +14,7 @@ import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
 import ru.yandex.practicum.service.hub.HubEventService;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -89,6 +86,10 @@ public class HubEventProcessor implements Runnable {
                 consumer.close();
             }
         }
+    }
+
+    public void stop() {
+        Optional.ofNullable(consumer).ifPresent(KafkaConsumer::wakeup);
     }
 
     // только для отладки

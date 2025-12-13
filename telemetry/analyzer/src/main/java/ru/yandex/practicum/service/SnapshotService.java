@@ -84,7 +84,7 @@ public class SnapshotService {
     }
 
     private boolean checkCondition(Condition condition, Integer value) {
-        log.info("Проверка занчения по условиям");
+        log.info("Проверка значения по условиям");
         return switch (condition.getOperation()) {
             case ConditionOperation.LOWER_THAN -> value < condition.getValue();
             case ConditionOperation.EQUALS -> value.equals(condition.getValue());

@@ -9,6 +9,7 @@ import ru.yandex.practicum.Json;
 import ru.yandex.practicum.grpc.telemetry.event.DeviceActionProto;
 import ru.yandex.practicum.grpc.telemetry.event.DeviceActionRequestProto;
 import ru.yandex.practicum.grpc.telemetry.hubrouter.HubRouterControllerGrpc;
+import ru.yandex.practicum.kafka.telemetry.event.ActionTypeAvro;
 import ru.yandex.practicum.model.Action;
 import ru.yandex.practicum.model.ActionType;
 import ru.yandex.practicum.model.Scenario;
@@ -37,11 +38,15 @@ public class ClientService {
             DeviceActionRequestProto deviceActionRequestProto =
                     buildDeviceActionRequestProto(hubId, scenarioName, entries.getKey(), entries.getValue());
 
+            log.info("Отправляю запрос с телом {}", deviceActionRequestProto);
             hubRouterClient.handleDeviceAction(deviceActionRequestProto);
         }
     }
 
     private DeviceActionRequestProto buildDeviceActionRequestProto(String hubId, String scenarioName, String sensorId, Action action) {
+        if (action.getType() == ActionType.fromAvro(ActionTypeAvro.SET_VALUE) && action.getValue() == null)
+            return null;
+
         return DeviceActionRequestProto.newBuilder()
                 .setHubId(hubId)
                 .setScenarioName(scenarioName)

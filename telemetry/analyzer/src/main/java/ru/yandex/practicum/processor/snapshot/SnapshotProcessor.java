@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -70,6 +71,10 @@ public class SnapshotProcessor {
                 consumer.close();
             }
         }
+    }
+
+    public void stop() {
+        Optional.ofNullable(consumer).ifPresent(KafkaConsumer::wakeup);
     }
 
     private void fixOffsets(ConsumerRecord<String, SensorsSnapshotAvro> record, int count, KafkaConsumer<String, SensorsSnapshotAvro> consumer) {

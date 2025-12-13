@@ -95,6 +95,10 @@ public class AggregationStarter {
         }
     }
 
+    public void stop() {
+        Optional.ofNullable(consumer).ifPresent(KafkaConsumer::wakeup);
+    }
+
     private void fixOffsets(ConsumerRecord<String, SpecificRecordBase> record, int count, KafkaConsumer<String, SpecificRecordBase> consumer) {
         currentOffsets.put(
                 new TopicPartition(record.topic(), record.partition()),
