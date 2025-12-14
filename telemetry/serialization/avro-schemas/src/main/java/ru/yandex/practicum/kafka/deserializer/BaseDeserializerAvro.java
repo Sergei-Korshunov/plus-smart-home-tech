@@ -1,4 +1,4 @@
-package ru.yandex.practicum.kafka.serializer;
+package ru.yandex.practicum.kafka.deserializer;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.Schema;
@@ -9,7 +9,7 @@ import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.kafka.common.serialization.Deserializer;
 import ru.yandex.practicum.Json;
-import ru.yandex.practicum.kafka.serializer.exeption.DeserializationException;
+import ru.yandex.practicum.kafka.deserializer.exeption.DeserializationException;
 
 @Slf4j
 public class BaseDeserializerAvro<T extends SpecificRecordBase> implements Deserializer<T> {

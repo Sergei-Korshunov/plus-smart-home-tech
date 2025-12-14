@@ -45,4 +45,3 @@ public class SerializerAvro implements Serializer<SpecificRecordBase> {
         }
     }
 }
-

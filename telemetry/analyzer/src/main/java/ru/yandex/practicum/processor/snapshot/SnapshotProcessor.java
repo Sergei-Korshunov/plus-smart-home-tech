@@ -1,75 +1,56 @@
-package ru.yandex.practicum.telemetry.aggregator;
+package ru.yandex.practicum.processor.snapshot;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.avro.specific.SpecificRecordBase;
-import org.apache.kafka.clients.consumer.*;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SensorsSnapshotAvro;
-import ru.yandex.practicum.telemetry.aggregator.service.SnapshotService;
+import ru.yandex.practicum.service.SnapshotService;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Component
-public class AggregationStarter {
-    private final KafkaConsumer<String, SpecificRecordBase> consumer;
-
-    private final KafkaProducer<String, SpecificRecordBase> producer;
-
+public class SnapshotProcessor {
+    private final KafkaConsumer<String, SensorsSnapshotAvro> consumer;
     private final SnapshotService snapshotService;
 
-    @Value("${kafka.topic.telemetry-sensors}")
-    private String sensorsTopic;
-
-    @Value("${kafka.topic.telemetry-snapshots}")
+    @Value("${analyzer.topic.snapshots-topic}")
     private String snapshotsTopic;
-
     private final Map<TopicPartition, OffsetAndMetadata> currentOffsets = new HashMap<>();
 
     @Autowired
-    public AggregationStarter(KafkaConsumer<String, SpecificRecordBase> consumer,
-                              KafkaProducer<String, SpecificRecordBase> producer, SnapshotService snapshotService) {
+    public SnapshotProcessor(KafkaConsumer<String, SensorsSnapshotAvro> consumer, SnapshotService snapshotService) {
         this.consumer = consumer;
-        this.producer = producer;
         this.snapshotService = snapshotService;
     }
 
     public void start() {
         Runtime.getRuntime().addShutdownHook(new Thread(consumer::wakeup));
         try {
-            consumer.subscribe(List.of(sensorsTopic));
+            consumer.subscribe(List.of(snapshotsTopic));
 
             while (!Thread.currentThread().isInterrupted()) {
-                ConsumerRecords<String, SpecificRecordBase> records = consumer.poll(Duration.ofMillis(500));
+                ConsumerRecords<String, SensorsSnapshotAvro> records = consumer.poll(Duration.ofMillis(100));
 
                 int count = 0;
-                for (ConsumerRecord<String, SpecificRecordBase> record : records) {
+                for (ConsumerRecord<String, SensorsSnapshotAvro> record : records) {
                     log.info("Обрабатываем сообщение: топик = {}, партиция = {}, смещение = {}, значение: {}",
                             record.topic(), record.partition(), record.offset(), record.value());
 
-                    SensorEventAvro event = (SensorEventAvro) record.value();
-                    Optional<SensorsSnapshotAvro> snapshot = snapshotService.updateState(event);
+                    SensorsSnapshotAvro sensorsSnapshotAvro = record.value();
+                    snapshotService.scenarioProcessing(sensorsSnapshotAvro);
 
-                    if (snapshot.isPresent()) {
-                        producer.send(new ProducerRecord<>(
-                                snapshotsTopic,
-                                null,
-                                event.getTimestamp().toEpochMilli(),
-                                event.getHubId(),
-                                snapshot.get()
-                        ));
-                        log.info("Снапшот обновлен: {}", snapshot);
-                    } else {
-                        log.info("Снапшот не обновлен");
-                    }
                     // фиксируем оффсеты обработанных записей, если нужно
                     fixOffsets(record, count, consumer);
                     count++;
@@ -84,13 +65,10 @@ public class AggregationStarter {
             log.error("Ошибка во время обработки событий от датчиков", e);
         } finally {
             try {
-                producer.flush();
                 consumer.commitSync();
             } finally {
                 log.info("Закрываем консьюмер");
                 consumer.close();
-                log.info("Закрываем продюсер");
-                producer.close();
             }
         }
     }
@@ -99,7 +77,7 @@ public class AggregationStarter {
         Optional.ofNullable(consumer).ifPresent(KafkaConsumer::wakeup);
     }
 
-    private void fixOffsets(ConsumerRecord<String, SpecificRecordBase> record, int count, KafkaConsumer<String, SpecificRecordBase> consumer) {
+    private void fixOffsets(ConsumerRecord<String, SensorsSnapshotAvro> record, int count, KafkaConsumer<String, SensorsSnapshotAvro> consumer) {
         currentOffsets.put(
                 new TopicPartition(record.topic(), record.partition()),
                 new OffsetAndMetadata(record.offset() + 1)
