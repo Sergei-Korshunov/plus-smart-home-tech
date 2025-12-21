@@ -22,7 +22,6 @@ public class Consumer {
 
     @Bean
     public KafkaConsumer<String, SpecificRecordBase> getConsumerInstance() {
-        System.out.println("consumerProperty.getKeyDeserializerClass() " + consumerProperty.getKeyDeserializerClass());
         Properties properties = new Properties();
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, consumerProperty.getBootstrapServers());
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, consumerProperty.getKeyDeserializerClass());

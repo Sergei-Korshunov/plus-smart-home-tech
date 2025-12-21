@@ -1,0 +1,20 @@
+kafka:
+  consumer:
+    bootstrap-servers: localhost:9092
+    key-deserializer-class: org.apache.kafka.common.serialization.StringDeserializer
+    value-deserializer-class: ru.yandex.practicum.kafka.deserializer.SensorEventDeserializer
+    group-id: sensorEvent.group.id
+    client-id: SensorEventConsumer
+    enable-auto-commit: false
+  producer:
+    bootstrap-servers: localhost:9092
+    key-serializer-class: org.apache.kafka.common.serialization.StringSerializer
+    value-serializer-class: ru.yandex.practicum.kafka.serializer.SerializerAvro
+  topic:
+    telemetry-sensors: telemetry.sensors.v1
+    telemetry-snapshots: telemetry.snapshots.v1
+
+logging:
+  level:
+    org.springframework.kafka: INFO
+    ru.yandex.practicum.telemetry.aggregator: TRACE

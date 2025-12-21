@@ -22,7 +22,6 @@ public class HubConsumer {
 
     @Bean
     public KafkaConsumer<String, HubEventAvro> getHubEventConsumerInstance() {
-        System.out.println("consumerProperty.getKeyDeserializerClass() " + hubConsumerProperty.getKeyDeserializer());
         Properties properties = new Properties();
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, hubConsumerProperty.getBootstrapServers());
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, hubConsumerProperty.getKeyDeserializer());
