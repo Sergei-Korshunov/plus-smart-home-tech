@@ -1,0 +1,32 @@
+spring:
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        format_sql: true
+  sql:
+    init:
+      mode: always
+  output:
+    ansi:
+      enabled: ALWAYS
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:6432/warehouse
+    username: sergei
+    password: 12345
+
+logging:
+  level:
+    "ru.yandex.practicum": TRACE
+    "org.springframework.orm.jpa": INFO
+    "org.springframework.transaction": INFO
+    "org.springframework.transaction.interceptor": TRACE
+    "org.springframework.orm.jpa.JpaTransactionManager": DEBUG
+    "org.hibernate.SQL": DEBUG
+    "org.hibernate.orm.jdbc.bind": trace
+
+server:
+  port: 0
