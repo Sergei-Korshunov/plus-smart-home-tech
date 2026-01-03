@@ -22,7 +22,6 @@ public class SnapshotConsumer {
 
     @Bean
     public KafkaConsumer<String, SensorsSnapshotAvro> getSnapshotConsumerInstance() {
-        System.out.println("consumerProperty.getKeyDeserializerClass() " + snapshotConsumerProperty.getKeyDeserializer());
         Properties properties = new Properties();
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, snapshotConsumerProperty.getBootstrapServers());
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, snapshotConsumerProperty.getKeyDeserializer());
