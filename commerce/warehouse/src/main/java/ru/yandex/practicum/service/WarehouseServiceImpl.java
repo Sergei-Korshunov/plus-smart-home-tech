@@ -59,7 +59,7 @@ public class WarehouseServiceImpl implements WarehouseService {
                 .stream()
                 .collect(Collectors.toMap(WarehouseProduct::getProductId, Function.identity()));
         if (products.size() != cartProducts.size()) {
-            throw new ProductInShoppingCartLowQuantityInWarehouseException(String.format("Некоторых товаров нет на складе"));
+            throw new ProductInShoppingCartLowQuantityInWarehouseException("Некоторых товаров нет на складе");
         }
 
         double weight = 0;
@@ -68,7 +68,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         for (Map.Entry<UUID, Long> cartProduct : cartProducts.entrySet()) {
             WarehouseProduct product = products.get(cartProduct.getKey());
             if (cartProduct.getValue() > product.getQuantity()) {
-                throw new ProductInShoppingCartLowQuantityInWarehouseException(String.format("Товар из корзины не находится в требуемом количестве на складе"));
+                throw new ProductInShoppingCartLowQuantityInWarehouseException("Товар из корзины не находится в требуемом количестве на складе");
             }
             weight += product.getWeight() * cartProduct.getValue();
             volume += product.getHeight() * product.getWeight() * product.getDepth() * cartProduct.getValue();
@@ -98,7 +98,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     private WarehouseProduct getWarehouseProduct(UUID productId) {
         return warehouseProductRepository.findById(productId).orElseThrow(
-                () -> new NoSpecifiedProductInWarehouseException(String.format("Нет информации о товаре на складе"))
+                () -> new NoSpecifiedProductInWarehouseException("Нет информации о товаре на складе")
         );
     }
 
