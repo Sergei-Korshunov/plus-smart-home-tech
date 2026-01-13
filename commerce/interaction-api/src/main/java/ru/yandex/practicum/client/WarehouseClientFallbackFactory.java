@@ -3,11 +3,11 @@ package ru.yandex.practicum.client;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.dto.cart.CartDTO;
-import ru.yandex.practicum.dto.warehouse.AddProductToWarehouseRequest;
-import ru.yandex.practicum.dto.warehouse.AddressDTO;
-import ru.yandex.practicum.dto.warehouse.BookedProductDTO;
-import ru.yandex.practicum.dto.warehouse.NewProductInWarehouseRequest;
+import ru.yandex.practicum.dto.warehouse.*;
 import ru.yandex.practicum.exception.ServiceUnavailableException;
+
+import java.util.Map;
+import java.util.UUID;
 
 @Component
 public class WarehouseClientFallbackFactory implements FallbackFactory<WarehouseClient> {
@@ -21,7 +21,22 @@ public class WarehouseClientFallbackFactory implements FallbackFactory<Warehouse
             }
 
             @Override
+            public void transferProductForDelivery(DeliveryRequest deliveryRequest) {
+                throw new ServiceUnavailableException("Сервис склада временно недоступен", cause);
+            }
+
+            @Override
+            public void takeProductReturn(Map<UUID, Long> products) {
+                throw new ServiceUnavailableException("Сервис склада временно недоступен", cause);
+            }
+
+            @Override
             public BookedProductDTO checkAvailabilityProduct(CartDTO cartDTO) {
+                throw new ServiceUnavailableException("Сервис склада временно недоступен", cause);
+            }
+
+            @Override
+            public BookedProductDTO assemblyProductForOrder(AssemblyProductsForOrderRequest assemblyProductsForOrder) {
                 throw new ServiceUnavailableException("Сервис склада временно недоступен", cause);
             }
 

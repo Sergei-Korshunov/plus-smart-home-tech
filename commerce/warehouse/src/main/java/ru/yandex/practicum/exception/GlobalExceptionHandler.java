@@ -51,4 +51,12 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorMessage(exception, HttpStatus.BAD_REQUEST));
     }
+
+    @ExceptionHandler(BookingNotFoundException.class)
+    public ResponseEntity<ErrorMessage> bookingNotFoundException(BookingNotFoundException exception) {
+        log.error(exception.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorMessage(exception, HttpStatus.BAD_REQUEST));
+    }
 }

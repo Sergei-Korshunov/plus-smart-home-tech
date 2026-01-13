@@ -8,6 +8,8 @@ import ru.yandex.practicum.dto.cart.CartDTO;
 import ru.yandex.practicum.dto.cart.ChangeProductQuantityRequestDTO;
 import ru.yandex.practicum.dto.warehouse.BookedProductDTO;
 
+import static ru.yandex.practicum.client.util.ValidationMessage.*;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -17,8 +19,6 @@ import java.util.UUID;
         path = "/api/v1/shopping-cart"
 )
 public interface CartClient {
-
-    String USER_NAME_CANNOT_BE_EMPTY = "Имя пользователя не может быть пустым";
 
     @GetMapping
     CartDTO getUserCurrentCart(@RequestParam(name = "username") @NotBlank(message = USER_NAME_CANNOT_BE_EMPTY) String userName);
