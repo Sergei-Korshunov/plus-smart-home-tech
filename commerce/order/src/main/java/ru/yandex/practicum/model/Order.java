@@ -1,10 +1,7 @@
 package ru.yandex.practicum.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import ru.yandex.practicum.dto.order.OrderState;
 
 import java.util.Map;
@@ -12,7 +9,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "orders", schema = "public")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
