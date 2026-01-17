@@ -1,18 +1,19 @@
 package ru.yandex.practicum.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.dto.cart.CartDTO;
-import ru.yandex.practicum.dto.warehouse.AddProductToWarehouseRequest;
-import ru.yandex.practicum.dto.warehouse.AddressDTO;
-import ru.yandex.practicum.dto.warehouse.BookedProductDTO;
-import ru.yandex.practicum.dto.warehouse.NewProductInWarehouseRequest;
+import ru.yandex.practicum.dto.warehouse.*;
+import ru.yandex.practicum.exception.BookingNotFoundException;
 import ru.yandex.practicum.exception.NoSpecifiedProductInWarehouseException;
 import ru.yandex.practicum.exception.ProductInShoppingCartLowQuantityInWarehouseException;
 import ru.yandex.practicum.exception.SpecifiedProductAlreadyInWarehouseException;
 import ru.yandex.practicum.mapper.WarehouseProductMapper;
+import ru.yandex.practicum.model.Booking;
 import ru.yandex.practicum.model.WarehouseProduct;
+import ru.yandex.practicum.repository.BookingRepository;
 import ru.yandex.practicum.repository.WarehouseProductRepository;
 import ru.yandex.practicum.util.Json;
 import ru.yandex.practicum.utils.AddressUtil;
@@ -25,11 +26,16 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class WarehouseServiceImpl implements WarehouseService {
+    private static final String THERE_NOT_ENOUGH_ITEMS_FROM_BASKET =
+            "Товар из корзины не находится в требуемом количестве на складе";
     private final WarehouseProductRepository warehouseProductRepository;
+    private final BookingRepository bookingRepository;
     private final WarehouseProductMapper warehouseProductMapper;
 
-    public WarehouseServiceImpl(WarehouseProductRepository warehouseProductRepository, WarehouseProductMapper warehouseProductMapper) {
+    @Autowired
+    public WarehouseServiceImpl(WarehouseProductRepository warehouseProductRepository, BookingRepository bookingRepository, WarehouseProductMapper warehouseProductMapper) {
         this.warehouseProductRepository = warehouseProductRepository;
+        this.bookingRepository = bookingRepository;
         this.warehouseProductMapper = warehouseProductMapper;
     }
 
@@ -51,6 +57,39 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     @Override
     @Transactional
+    public void transferProductForDelivery(DeliveryRequest deliveryRequest) {
+        Booking booking = getBookingByOrderId(deliveryRequest.getOrderId());
+        booking.setDeliveryId(deliveryRequest.getDeliveryId());
+
+        bookingRepository.save(booking);
+
+        log.info("Передача заказ с UUID - {} в доставку", deliveryRequest.getOrderId());
+    }
+
+    private Booking getBookingByOrderId(UUID orderId) {
+        return bookingRepository.findByOrderId(orderId).orElseThrow(
+                () -> new BookingNotFoundException(String.format("Бронирование заказа с UUID - %s не найдено", orderId)));
+    }
+
+    @Override
+    @Transactional
+    public void takeProductReturn(Map<UUID, Long> products) {
+        Map<UUID, WarehouseProduct> warehouseProducts = warehouseProductRepository.findAllById(
+                products.keySet()).stream()
+                .collect(Collectors.toMap(WarehouseProduct::getProductId, Function.identity()));
+
+        for (Map.Entry<UUID, Long> entry : products.entrySet()) {
+            WarehouseProduct warehouseProduct = warehouseProducts.get(entry.getKey());
+            warehouseProduct.setQuantity(warehouseProduct.getQuantity() + entry.getValue());
+        }
+
+        warehouseProductRepository.saveAll(warehouseProducts.values());
+
+        log.info("Возврат товаров на склад");
+    }
+
+    @Override
+    @Transactional
     public BookedProductDTO checkAvailabilityProduct(CartDTO cartDTO) {
         log.info("Проверка наличия товаров из корзины на складе, корзина -> {}", Json.simpleObjectToJson(cartDTO));
 
@@ -68,8 +107,9 @@ public class WarehouseServiceImpl implements WarehouseService {
         for (Map.Entry<UUID, Long> cartProduct : cartProducts.entrySet()) {
             WarehouseProduct product = products.get(cartProduct.getKey());
             if (cartProduct.getValue() > product.getQuantity()) {
-                throw new ProductInShoppingCartLowQuantityInWarehouseException("Товар из корзины не находится в требуемом количестве на складе");
+                throw new ProductInShoppingCartLowQuantityInWarehouseException(THERE_NOT_ENOUGH_ITEMS_FROM_BASKET);
             }
+
             weight += product.getWeight() * cartProduct.getValue();
             volume += product.getHeight() * product.getWeight() * product.getDepth() * cartProduct.getValue();
             fragile = fragile || product.getFragile();
@@ -80,6 +120,49 @@ public class WarehouseServiceImpl implements WarehouseService {
         log.info("Товаров из корзины достаточно на складе, забронированные товары -> {}", Json.simpleObjectToJson(bookedProductDTO));
 
         return bookedProductDTO;
+    }
+
+    @Override
+    @Transactional
+    public BookedProductDTO assemblyProductForOrder(AssemblyProductsForOrderRequest assemblyProductsForOrder) {
+        Map<UUID, Long> orderProducts = assemblyProductsForOrder.getProducts();
+        Map<UUID, WarehouseProduct> products = warehouseProductRepository.findAllById(orderProducts.keySet())
+                .stream()
+                .collect(Collectors.toMap(WarehouseProduct::getProductId, Function.identity()));
+
+        double weight = 0;
+        double volume = 0;
+        boolean fragile = false;
+        for (Map.Entry<UUID, Long> cartProduct : orderProducts.entrySet()) {
+            WarehouseProduct product = products.get(cartProduct.getKey());
+            long newQuantity = product.getQuantity() - cartProduct.getValue();
+            if (newQuantity < 0) {
+                throw new ProductInShoppingCartLowQuantityInWarehouseException(THERE_NOT_ENOUGH_ITEMS_FROM_BASKET);
+            }
+
+            product.setQuantity(newQuantity);
+            weight += product.getWeight() * cartProduct.getValue();
+            volume += product.getHeight() * product.getWeight() * product.getDepth() * cartProduct.getValue();
+            fragile = fragile || product.getFragile();
+        }
+
+        createBooking(assemblyProductsForOrder);
+        warehouseProductRepository.saveAll(products.values());
+
+        return new BookedProductDTO(
+                weight,
+                volume,
+                fragile
+        );
+    }
+
+    private void createBooking(AssemblyProductsForOrderRequest assemblyProductsForOrder) {
+        Booking booking = Booking.builder()
+                .orderId(assemblyProductsForOrder.getOrderId())
+                .products(assemblyProductsForOrder.getProducts())
+                .build();
+
+        bookingRepository.save(booking);
     }
 
     @Override
@@ -104,12 +187,12 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     @Override
     public AddressDTO getAddress() {
-        log.info("Получение адресса");
+        log.info("Получение адреса");
 
         String address = AddressUtil.getAddress();
         AddressDTO addressDTO = new AddressDTO(address, address, address, address, address);
 
-        log.info("Адресс получен {}", Json.simpleObjectToJson(addressDTO));
+        log.info("Адрес получен {}", Json.simpleObjectToJson(addressDTO));
 
         return addressDTO;
     }

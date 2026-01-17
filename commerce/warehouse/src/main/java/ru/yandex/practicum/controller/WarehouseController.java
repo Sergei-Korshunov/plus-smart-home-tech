@@ -4,11 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.client.WarehouseClient;
 import ru.yandex.practicum.dto.cart.CartDTO;
-import ru.yandex.practicum.dto.warehouse.AddProductToWarehouseRequest;
-import ru.yandex.practicum.dto.warehouse.AddressDTO;
-import ru.yandex.practicum.dto.warehouse.BookedProductDTO;
-import ru.yandex.practicum.dto.warehouse.NewProductInWarehouseRequest;
+import ru.yandex.practicum.dto.warehouse.*;
 import ru.yandex.practicum.service.WarehouseService;
+
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/warehouse")
@@ -26,8 +26,23 @@ public class WarehouseController implements WarehouseClient {
     }
 
     @Override
+    public void transferProductForDelivery(DeliveryRequest deliveryRequest) {
+        warehouseService.transferProductForDelivery(deliveryRequest);
+    }
+
+    @Override
+    public void takeProductReturn(Map<UUID, Long> products) {
+        warehouseService.takeProductReturn(products);
+    }
+
+    @Override
     public BookedProductDTO checkAvailabilityProduct(CartDTO cartDTO) {
         return warehouseService.checkAvailabilityProduct(cartDTO);
+    }
+
+    @Override
+    public BookedProductDTO assemblyProductForOrder(AssemblyProductsForOrderRequest assemblyProductsForOrder) {
+        return warehouseService.assemblyProductForOrder(assemblyProductsForOrder);
     }
 
     @Override
